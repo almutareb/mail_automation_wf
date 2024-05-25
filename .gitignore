@@ -161,6 +161,7 @@ cython_debug/
 
 # don't sync large binaries and pdf files
 *.bin
+*.pdf
 
 # don't sync nougat
 nougat/
