@@ -3,7 +3,7 @@ from pathlib import Path
 from pdf2image import convert_from_path
 from typing import List
 
-def pdf_to_images(pdf_path: str, output_dir: str) -> List[str]:
+def pdf_to_images(pdf_path: str, output_dir: str="output_dir") -> List[str]:
     """
     Convert a PDF to images and save them to the specified directory.
 
