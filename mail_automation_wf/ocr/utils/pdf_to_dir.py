@@ -29,9 +29,11 @@ def pdf_to_images(pdf_path: str, output_dir: str="output_dir") -> List[str]:
     
     return image_paths
 
-# Example usage
-pdf_path = 'example.pdf'  # Path to your PDF file
-output_dir = 'output_images'  # Directory where images will be saved
-
-image_paths = pdf_to_images(pdf_path, output_dir)
-print(f'Images saved to: {image_paths}')
+if __name__ == "__main__":
+    
+    # Example usage
+    pdf_path = 'example.pdf'  # Path to your PDF file
+    output_dir = 'output_images'  # Directory where images will be saved
+    
+    image_paths = pdf_to_images(pdf_path, output_dir)
+    print(f'Images saved to: {image_paths}')
