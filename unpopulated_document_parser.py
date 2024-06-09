@@ -37,22 +37,13 @@ prompt = PromptTemplate.from_template(template)
 
 repo_id = "mistralai/Mixtral-8x22B-Instruct-v0.1"
 
-
-# llm = HuggingFaceEndpoint(
-#   repo_id=repo_id, 
-#   max_new_tokens=1024,
-#   repetition_penalty=1.2,
-#   return_full_text=False,
-# )
-
 llm = HuggingFaceEndpoint(
   repo_id="mistralai/Mistral-7B-Instruct-v0.3", 
-                          temperature=0.1, 
-                          max_new_tokens=1024,
-                          repetition_penalty=1.2,
-                          return_full_text=False
+  temperature=0.1, 
+  max_new_tokens=1024,
+  repetition_penalty=1.2,
+  return_full_text=False
     )
-
 
 llm_chain = prompt | llm
 
