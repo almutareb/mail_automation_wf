@@ -49,6 +49,7 @@ llm_chain = prompt | llm
 
 json_ouput = llm_chain.invoke({"unstrucutred_data": all_valid_text})
 
+# Will return None if the LLM did not format the output correctly
 json_ouput_as_json = json_string_to_json(json_ouput)
 
 print(str(json_ouput))
