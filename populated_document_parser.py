@@ -17,7 +17,7 @@ import pytesseract
 from pytesseract import Output
 from PIL import Image
 
-pdf_path = "examples/populated_document.pdf"
+pdf_path = "examples\schadenanzeige_haftpflicht-2.pdf"
 
 
 f = pdf_to_images(
