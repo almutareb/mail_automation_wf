@@ -2,6 +2,9 @@ import os
 from pathlib import Path
 from pdf2image import convert_from_path
 from typing import List, NoReturn
+import pytesseract
+from pytesseract import Output
+from PIL import Image
 
 class DocumentParser:
     """
@@ -41,7 +44,7 @@ class DocumentParser:
             List[str]: A list of file paths to the saved images.
         """
         # Ensure output directory exists
-        os.makedirs(self.output_dir, exist_ok=True)
+        os.makedirs(self.ocr_output_location, exist_ok=True)
         
         # Convert PDF to images
         images = convert_from_path(self.pdf_file_location)
@@ -50,9 +53,39 @@ class DocumentParser:
 
 
         for i, image in enumerate(images):
-            image_path = os.path.join(self.output_dir, f'page_{i + 1}.png')
+            image_path = os.path.join(self.ocr_output_location, f'page_{i + 1}.png')
             image.save(image_path, 'PNG')
             self.pdf_images.append(image_path)
             
-    
+    def image_to_text(
+        self,
+        ocr_output_type=Output.DICT,
+        lang="deu",
+        **kwargs
+        ):
+        """This function runs ocr on the given images
         
+        Keyword arguments:
+        argument -- description
+        Return: return_description
+        """
+        
+        data = []
+        for i in self.pdf_images:
+            temp_output = pytesseract.image_to_data(
+                Image.open(
+                    i),
+                    lang=lang,
+                    output_type=ocr_output_type,
+                )
+            data.append(temp_output)
+        return data
+    
+if __name__ == "__main__":
+    dd = DocumentParser(
+        pdf_file_location="/home/isayahc/projects/mail_automation_wf/examples/populated_document.pdf",
+        ocr_output_location="test_sample",
+    )
+    dd.pdf_to_images()
+    data = dd.image_to_text()
+    x = 0
