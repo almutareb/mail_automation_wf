@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 import os
 import time
 import fetch_mail_outlook
+from pathlib import Path
+import attachment_parser
 
 load_dotenv()
 
@@ -52,21 +54,27 @@ def get_email_data(email_uuid:uuid.uuid4, emails_jason_file:str) -> dict:
             return email         
 
 
-def process_emails(unprocessed_emails:list[uuid.uuid4], emails_jason_file:str, status_file:str) -> None:
+def process_emails(unprocessed_emails:list[uuid.uuid4], 
+                   emails_jason_file:str, 
+                   status_file:str) -> None:
     """ Summarises the email and parses the attachment """
-    df = pd.read_csv(filepath_or_buffer=status_file) 
     for i, email_uuid in enumerate(unprocessed_emails):
-        email_data = get_email_data(email_uuid=email_uuid, emails_jason_file=emails_jason_file)
+        email_data = get_email_data(email_uuid=email_uuid, 
+                                    emails_jason_file=emails_jason_file)
+        # Summarize the email body
         email_body = email_data['body'].replace('\r','').replace("\n", "")
         summary = summarize_email_body(email_body=email_body)
+        df = pd.read_csv(filepath_or_buffer=status_file, dtype='object')
         df.loc[df['email_UUID'] == email_uuid, 'Summary'] = summary
-        
+        df.to_csv(path_or_buf=status_file, index=False)
+
+        # Parse the attachments
         for attachment_loc in email_data['attachments']:
-            parse_attachment(attachment_loc=attachment_loc)
-            # Write status to CSV -> store the json on disk
+            process_attachment(attachment_loc=attachment_loc)
         
+        df.loc[df['email_UUID'] == email_uuid, 'Status'] = EmailStatus.PROCESSED
         print(f'Processed {i+1} email') 
-    df.to_csv(path_or_buf=status_file, index=False)
+    
 
 
 def update_email_status(email_uuid:uuid, status:EmailStatus, status_file:str) -> None:
@@ -86,30 +94,42 @@ def summarize_email_body(email_body:str) -> str:
     return_full_text=False,
     huggingfacehub_api_token=HF_API_TOKEN) 
 
-    template = """Summarize this email in a few words:\n{email_body} """
+    template = """In less than 5 words answer what type of claim this is:\n{email_body}"""
     prompt = PromptTemplate.from_template(template)
     chain = prompt | llm | StrOutputParser()
     summary = chain.invoke({'email_body':email_body})
     return summary
 
 
-def parse_attachment(attachment_loc:str) -> json:
-    """ Use populated_document_parser """
-    loc = "D:\\singh\\Documents\\Mail_Automation_WF\\mail_automation_wf\\Fetch Mail\\Attachments\\7e8bda29-923d-44f5-9878-3340be26683a_schadenanzeige_haftpflicht-2.pdf"
+def process_attachment(attachment_loc:str, save_file_loc:str=None) -> None:
+    """ Parses the attachement and saves parsed doc to file """
+    if save_file_loc is None:
+        save_file_loc = 'processed_attachments'
+    attachment_loc_path = Path(attachment_loc)
+    if attachment_loc_path.suffix != ".pdf":
+        print("Can only handle pdf attachments at the moment")
+        return
+    attachment_name = attachment_loc_path.parts[-1].split('.')[0]
+    result = attachment_parser.parse_attachment(attachment_loc=attachment_loc)
+    if result:
+        with open(file=f"{attachment_name}_processed.txt", mode='w') as file:
+            file.write(result)
+    else:
+        print('Could not parse attachment')
 
-def main() -> None:
-    while True:
-        fetch_mail_outlook.get_email_from_outlook(user_id=EMAIL_ID, json_save_loc='emails.json')
-        check_for_new_mail(emails_jason_file='emails.json', status_file='email_status.csv')
-        unprocessed_emails = get_unprocessed_emails(status_file='email_status.csv')
-        process_emails(unprocessed_emails=unprocessed_emails,emails_jason_file='emails.json', status_file='email_status.csv')
-        time.sleep(5 * 60) # Sleep for 5 minutes (5 * 60 seconds)
+
+# def main() -> None:
+#     while True:
+#         fetch_mail_outlook.get_email_from_outlook(user_id=EMAIL_ID, json_save_loc='emails.json')
+#         check_for_new_mail(emails_jason_file='emails.json', status_file='email_status.csv')
+#         unprocessed_emails = get_unprocessed_emails(status_file='email_status.csv')
+#         process_emails(unprocessed_emails=unprocessed_emails,emails_jason_file='emails.json', status_file='email_status.csv')
+#         time.sleep(5 * 60) # Sleep for 5 minutes (5 * 60 seconds)
 
 
 if __name__ == "__main__":
-    bod = "Dear Sir,\r\n\r\n \r\n\r\nThis is to inform you that I while I was practicing golf in my backyard, an errant shot broke my neighbour’s window. He has asked me to replace his window and I would like to claim this expense against my home insurance policy. \r\n\r\nPlease find attached my policy claim form duly filled. \r\n\r\n \r\n\r\nBest regards,\r\n\r\n \r\n\r\nAstrix Gallier\r\nTel: +43 (151) 017565893214  \r\n"
-    bod = bod.replace('\r','').replace("\n", "")
-    summary = summarize_email_body(email_body=bod)
-    print(f'{summary=}')
-    # unprocessed_emails = get_unprocessed_emails(status_file='email_status.csv')
-    # process_emails(unprocessed_emails=unprocessed_emails,emails_jason_file='emails.json', status_file='email_status.csv')
+    unprocessed_emails = get_unprocessed_emails(status_file='email_status.csv')
+    print(f'{unprocessed_emails=}')
+    process_emails(unprocessed_emails=unprocessed_emails,emails_jason_file='emails.json', status_file='email_status.csv')
+    # df = pd.read_csv(filepath_or_buffer='email_status.csv')
+    # print(df.head())
