@@ -11,6 +11,7 @@ import time
 import fetch_mail_outlook
 from pathlib import Path
 import attachment_parser
+import summarize_mail
 
 load_dotenv()
 
