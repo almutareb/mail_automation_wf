@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from pdf2image import convert_from_path
-from typing import List, NoReturn, Dict
+from typing import List, Dict
 import pytesseract
 from pytesseract import Output
 from PIL import Image
@@ -32,7 +32,7 @@ class DocumentParser:
         self,
         # pdf_path: str, 
         # output_dir: str="output_dir"
-        ) -> NoReturn:
+        ) -> None:
         """
         Convert a PDF to images and save them to the specified directory.
 
@@ -87,6 +87,9 @@ if __name__ == "__main__":
         pdf_file_location="examples/blank_documenr.pdf",
         ocr_output_location="test_sample",
     )
+    
+    
     dd.pdf_to_images()
+    
     data = dd.image_to_text()
     x = 0
