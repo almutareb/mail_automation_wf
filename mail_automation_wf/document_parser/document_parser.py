@@ -82,8 +82,9 @@ class DocumentParser:
         return data
     
 if __name__ == "__main__":
+    
     dd = DocumentParser(
-        pdf_file_location="/home/isayahc/projects/mail_automation_wf/examples/populated_document.pdf",
+        pdf_file_location="examples/blank_documenr.pdf",
         ocr_output_location="test_sample",
     )
     dd.pdf_to_images()
