@@ -14,7 +14,7 @@ class DocumentParser:
     - pdf_file_location  (str) 
     - ocr_output_location (str)
     
-    Return: return_description
+    
     """
     
     
@@ -25,13 +25,11 @@ class DocumentParser:
         ):
         self.pdf_file_location = pdf_file_location
         self.ocr_output_location = ocr_output_location
-        self.pdf_images = []
+        self.pdf_images: List[str] = []
         
         
     def pdf_to_images(
         self,
-        # pdf_path: str, 
-        # output_dir: str="output_dir"
         ) -> None:
         """
         Convert a PDF to images and save them to the specified directory.
