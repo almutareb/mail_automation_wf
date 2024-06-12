@@ -46,13 +46,15 @@ def summarize_email_body(email_body:str,
     result = chain.invoke({'email':email_body})
     
     # Find 'summary:' in the result and take text from that
-    key_word = 'summary:'
-    if key_word in result:
-        id = result.find(key_word)
-        summary = result[id+(len(key_word)):].strip()
-    else:
-        print(f"Could not find {key_word} in result -> returning result as is")
-        summary = result
+    key_words = ['summary:', 'Summary:']
+    for keyword in key_words:
+        if keyword in result:
+            id = result.find(keyword)
+            summary = result[id+(len(keyword)):].strip()
+            break
+        else:
+            print(f"Could not find keyword in result -> returning result as is")
+            summary = result
 
     return summary
 
@@ -69,7 +71,7 @@ if __name__ == "__main__":
     return_full_text=False,
     huggingfacehub_api_token=HF_API_TOKEN) 
 
-    email_body2 = "Dear Sir,\r\n\r\n \r\n\r\nThis is to inform you that I while I was practicing golf in my backyard, an errant shot broke my neighbour’s window. He has asked me to replace his window and I would like to claim this expense against my home insurance policy. \r\n\r\nPlease find attached my policy claim form duly filled. \r\n\r\n \r\n\r\nBest regards,\r\n\r\n \r\n\r\nAstrix Gallier\r\nTel: +43 (151) 017565893214  \r\n"
+    email_body2 = "Dear Insurance Company,\r\n\r\n\r\n\r\nHere's the short version: I reached for a jar of spaghetti sauce on the top shelf, but it had other ideas. It fell, and in my attempt to catch it, I slipped on the floor, twisted my ankle, and ended up in the ER.\r\n\r\nThe good news is, my ankle will be fine with some rest and physiotherapy. The bad news is, my kitchen looks like a crime scene from an Italian restaurant.\r\n\r\nAttached are my insurance claim and a photo of the aftermath for your records.\r\n\r\nThanks for your help!\r\n\r\n \r\n\r\nBest,\r\n\r\n \r\n\r\nK. Singh\r\n\r\nPolicy Number: ABC987654\r\n\r\n \r\n"
 
     summary = summarize_email_body(email_body=email_body2, llm_model=llm)
     print(summary)
