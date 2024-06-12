@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from pdf2image import convert_from_path
-from typing import List, NoReturn
+from typing import List, NoReturn, Dict
 import pytesseract
 from pytesseract import Output
 from PIL import Image
@@ -62,7 +62,7 @@ class DocumentParser:
         ocr_output_type=Output.DICT,
         lang="deu",
         **kwargs
-        ):
+        ) -> List[Dict]:
         """This function runs ocr on the given images
         
         Keyword arguments:
