@@ -22,14 +22,14 @@ def summarize_email_body(email_body:str,
                         "Could you please provide me with the relevant information at your earliest convenience?")
     human_message_prompt1 = HumanMessagePromptTemplate.from_template(template=human_template1)
 
-    example_message1 = """summary: Requesting details about current insurance policy coverage and renewal procedures."""
+    example_message1 = """Requesting details about current insurance policy coverage and renewal procedures."""
     example_output1 = AIMessagePromptTemplate.from_template(template=example_message1)
 
     human_template2 = ("email: I am writing to report a car accident that occurred on 12.Jun.2022 at Waterloo. "
                        "My policy number is 1234567. Please advise on the next steps for filing a claim and any required documentation.")
     human_message_prompt2 = HumanMessagePromptTemplate.from_template(template=human_template2)
 
-    example_message2 = """summary: Vehicle insurance claim from accident. Policy number provided."""
+    example_message2 = """Vehicle insurance claim from accident. Policy number provided."""
     example_output2 = AIMessagePromptTemplate.from_template(template=example_message2)
 
     data_template = """email: {email}"""
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     return_full_text=False,
     huggingfacehub_api_token=HF_API_TOKEN) 
 
-    email_body2 = "Dear Insurance Company,\r\n\r\n\r\n\r\nHere's the short version: I reached for a jar of spaghetti sauce on the top shelf, but it had other ideas. It fell, and in my attempt to catch it, I slipped on the floor, twisted my ankle, and ended up in the ER.\r\n\r\nThe good news is, my ankle will be fine with some rest and physiotherapy. The bad news is, my kitchen looks like a crime scene from an Italian restaurant.\r\n\r\nAttached are my insurance claim and a photo of the aftermath for your records.\r\n\r\nThanks for your help!\r\n\r\n \r\n\r\nBest,\r\n\r\n \r\n\r\nK. Singh\r\n\r\nPolicy Number: ABC987654\r\n\r\n \r\n"
+    email_body2 = "Dear Sir,\r\n\r\n \r\n\r\nThis is to inform you that I while I was practicing golf in my backyard, an errant shot broke my neighbour’s window. He has asked me to replace his window and I would like to claim this expense against my home insurance policy. \r\n\r\nPlease find attached my policy claim form duly filled. \r\n\r\n \r\n\r\nBest regards,\r\n\r\n \r\n\r\nAstrix Gallier\r\nTel: +43 (151) 017565893214  \r\n,"
 
     summary = summarize_email_body(email_body=email_body2, llm_model=llm)
     print(summary)
