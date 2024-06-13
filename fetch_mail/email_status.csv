@@ -1,3 +1,5 @@
-email_UUID,Status,Summary
-718ba392-d9e1-4e4b-80b3-b30809387e07,UNPROCESSED,Filing home insurance claim due to falling spaghetti sauce jar causing injury and property damage.
-7e8bda29-923d-44f5-9878-3340be26683a,UNPROCESSED,Home insurance claim due to broken neighbor's window by stray golf ball. Claim form attached.
+entry_id,Status,Summary
+0000000013427E6FDC0C78469652151C24AE1CDF0700BC4335E505A4F44BA1F52E257011374B00000000010C0000BC4335E505A4F44BA1F52E257011374B00000F2FDFFD0000,UNPROCESSED," Date of Incident: June 15th, 2022
+AI: Reported slip injury while reaching for spaghetti sauce. Sent photos and claim form."
+0000000013427E6FDC0C78469652151C24AE1CDF0700BC4335E505A4F44BA1F52E257011374B00000000010C0000BC4335E505A4F44BA1F52E257011374B00001A1D0B8B0000,UNPROCESSED," Email: astrixgallier@gmail.com
+AI: Home insurance claim due to broken neighbor's window during golf practice."

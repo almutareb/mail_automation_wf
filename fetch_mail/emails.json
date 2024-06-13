@@ -1,21 +1,21 @@
 [
     {
-        "uuid": "718ba392-d9e1-4e4b-80b3-b30809387e07",
+        "entry_id": "0000000013427E6FDC0C78469652151C24AE1CDF0700BC4335E505A4F44BA1F52E257011374B00000000010C0000BC4335E505A4F44BA1F52E257011374B00000F2FDFFD0000",
         "subject": "Test_App_Email_1234 insurance claim",
         "body": "Dear Insurance Company,\r\n\r\n\r\n\r\nHere's the short version: I reached for a jar of spaghetti sauce on the top shelf, but it had other ideas. It fell, and in my attempt to catch it, I slipped on the floor, twisted my ankle, and ended up in the ER.\r\n\r\nThe good news is, my ankle will be fine with some rest and physiotherapy. The bad news is, my kitchen looks like a crime scene from an Italian restaurant.\r\n\r\nAttached are my insurance claim and a photo of the aftermath for your records.\r\n\r\nThanks for your help!\r\n\r\n \r\n\r\nBest,\r\n\r\n \r\n\r\nK. Singh\r\n\r\nPolicy Number: ABC987654\r\n\r\n \r\n",
         "received_time": "24-05-2024- 22:55:51",
         "attachments": [
-            "D:\\singh\\Documents\\Mail_Automation_WF\\mail_automation_wf\\Fetch Mail\\Attachments\\718ba392-d9e1-4e4b-80b3-b30809387e07_istockphoto-2149237610-1024x1024.jpg",
-            "D:\\singh\\Documents\\Mail_Automation_WF\\mail_automation_wf\\Fetch Mail\\Attachments\\718ba392-d9e1-4e4b-80b3-b30809387e07_Sample filled Claim Form.pdf"
+            "Mail_Automation_WF/mail_automation_wf/fetch_mail/Attachments/0000000013427E6FDC0C78469652151C24AE1CDF0700BC4335E505A4F44BA1F52E257011374B00000000010C0000BC4335E505A4F44BA1F52E257011374B00000F2FDFFD0000_istockphoto-2149237610-1024x1024.jpg",
+            "Mail_Automation_WF/mail_automation_wf/fetch_mail/Attachments/0000000013427E6FDC0C78469652151C24AE1CDF0700BC4335E505A4F44BA1F52E257011374B00000000010C0000BC4335E505A4F44BA1F52E257011374B00000F2FDFFD0000_Sample filled Claim Form.pdf"
         ]
     },
     {
-        "uuid": "7e8bda29-923d-44f5-9878-3340be26683a",
+        "entry_id": "0000000013427E6FDC0C78469652151C24AE1CDF0700BC4335E505A4F44BA1F52E257011374B00000000010C0000BC4335E505A4F44BA1F52E257011374B00001A1D0B8B0000",
         "subject": "Test_App_Email_1234 second email",
         "body": "Dear Sir,\r\n\r\n \r\n\r\nThis is to inform you that I while I was practicing golf in my backyard, an errant shot broke my neighbour’s window. He has asked me to replace his window and I would like to claim this expense against my home insurance policy. \r\n\r\nPlease find attached my policy claim form duly filled. \r\n\r\n \r\n\r\nBest regards,\r\n\r\n \r\n\r\nAstrix Gallier\r\nTel: +43 (151) 017565893214  \r\n",
         "received_time": "09-06-2024- 20:49:52",
         "attachments": [
-            "D:\\singh\\Documents\\Mail_Automation_WF\\mail_automation_wf\\Fetch Mail\\Attachments\\7e8bda29-923d-44f5-9878-3340be26683a_schadenanzeige_haftpflicht-2.pdf"
+            "Mail_Automation_WF/mail_automation_wf/fetch_mail/Attachments/0000000013427E6FDC0C78469652151C24AE1CDF0700BC4335E505A4F44BA1F52E257011374B00000000010C0000BC4335E505A4F44BA1F52E257011374B00001A1D0B8B0000_schadenanzeige_haftpflicht-2.pdf"
         ]
     }
 ]
