@@ -55,12 +55,10 @@ class DocumentParser:
         """
         Convert a PDF to images and save them to the specified directory.
 
-        Args:
-            pdf_path (str): The path to the PDF file to convert.
-            output_dir (str): The directory where the images will be saved.
+        ## Args:
 
-        Returns:
-            List[str]: A list of file paths to the saved images.
+        ## Returns:
+            None
         """
         # Ensure output directory exists
         os.makedirs(self.ocr_output_location, exist_ok=True)
@@ -83,10 +81,13 @@ class DocumentParser:
         **kwargs
         ) -> List[Dict]:
         """This function runs ocr on the given images
-        
-        Keyword arguments:
-        argument -- description
-        Return: return_description
+        After running OCR on the pdf images, 
+        ## Keyword arguments:
+        ## argument
+        - ocr_output_type : the type of outputs you want the ocr to return
+        - lang: the language of the document images. Default to "deu" or german
+        ## Return: 
+        - None
         """
         
         data = []
