@@ -11,6 +11,8 @@ import time
 import fetch_mail_outlook
 from pathlib import Path
 import attachment_parser
+import summarize_mail
+
 
 load_dotenv()
 
@@ -56,49 +58,32 @@ def get_email_data(email_uuid:uuid.uuid4, emails_jason_file:str) -> dict:
 
 def process_emails(unprocessed_emails:list[uuid.uuid4], 
                    emails_jason_file:str, 
-                   status_file:str) -> None:
+                   status_file:str, summarize_llm:HuggingFaceEndpoint) -> None:
     """ Summarises the email and parses the attachment """
     for i, email_uuid in enumerate(unprocessed_emails):
         email_data = get_email_data(email_uuid=email_uuid, 
                                     emails_jason_file=emails_jason_file)
         # Summarize the email body
         email_body = email_data['body'].replace('\r','').replace("\n", "")
-        summary = summarize_email_body(email_body=email_body)
+
+        summary = summarize_mail.summarize_email_body(email_body=email_body, llm_model=summarize_llm)
         df = pd.read_csv(filepath_or_buffer=status_file, dtype='object')
         df.loc[df['email_UUID'] == email_uuid, 'Summary'] = summary
         df.to_csv(path_or_buf=status_file, index=False)
 
-        # Parse the attachments
-        for attachment_loc in email_data['attachments']:
-            process_attachment(attachment_loc=attachment_loc)
+        # # Parse the attachments
+        # for attachment_loc in email_data['attachments']:
+        #     process_attachment(attachment_loc=attachment_loc)
         
-        df.loc[df['email_UUID'] == email_uuid, 'Status'] = EmailStatus.PROCESSED
+        # df.loc[df['email_UUID'] == email_uuid, 'Status'] = EmailStatus.PROCESSED
         print(f'Processed {i+1} email') 
     
-
 
 def update_email_status(email_uuid:uuid, status:EmailStatus, status_file:str) -> None:
     """ Updates the status of an email in csv """
     df = pd.read_csv(filepath_or_buffer=status_file)
     df.loc[df['email_UUID'] == email_uuid, 'Status'] = status
     df.to_csv(path_or_buf=status_file, index=False)
-
-
-def summarize_email_body(email_body:str) -> str:
-    """ Summarizes email body """
-    llm = HuggingFaceEndpoint(
-    repo_id="mistralai/Mixtral-8x7B-Instruct-v0.1", 
-    temperature=0.1, 
-    max_new_tokens=1024,
-    repetition_penalty=1.2,
-    return_full_text=False,
-    huggingfacehub_api_token=HF_API_TOKEN) 
-
-    template = """In less than 5 words answer what type of claim this is:\n{email_body}"""
-    prompt = PromptTemplate.from_template(template)
-    chain = prompt | llm | StrOutputParser()
-    summary = chain.invoke({'email_body':email_body})
-    return summary
 
 
 def process_attachment(attachment_loc:str, save_file_loc:str=None) -> None:
@@ -130,6 +115,18 @@ def process_attachment(attachment_loc:str, save_file_loc:str=None) -> None:
 if __name__ == "__main__":
     unprocessed_emails = get_unprocessed_emails(status_file='email_status.csv')
     print(f'{unprocessed_emails=}')
-    process_emails(unprocessed_emails=unprocessed_emails,emails_jason_file='emails.json', status_file='email_status.csv')
-    # df = pd.read_csv(filepath_or_buffer='email_status.csv')
-    # print(df.head())
+
+    llm = HuggingFaceEndpoint(
+    repo_id="mistralai/Mixtral-8x7B-Instruct-v0.1", 
+    temperature=0.1, 
+    max_new_tokens=1024,
+    repetition_penalty=1.2,
+    return_full_text=False,
+    huggingfacehub_api_token=HF_API_TOKEN) 
+
+
+    process_emails(unprocessed_emails=unprocessed_emails,
+                   emails_jason_file='emails.json', 
+                   status_file='email_status.csv',
+                   summarize_llm=llm)
+    
