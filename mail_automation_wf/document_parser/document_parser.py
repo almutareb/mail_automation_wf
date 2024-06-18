@@ -9,6 +9,7 @@ from PIL import Image
 from langchain_huggingface import HuggingFaceEndpoint
 from langchain_core.prompts import PromptTemplate
 import json
+import re
 # from mail_automation_wf.utils.file_handling import  json_string_to_json
 
 def json_string_to_json(json_string: str) -> Any:
@@ -26,6 +27,35 @@ def json_string_to_json(json_string: str) -> Any:
     except json.JSONDecodeError as e:
         print(f"An error occurred while parsing the JSON string: {e}")
         return None
+    
+def extract_json_from_string(input_string: str) -> Dict[str, Any]:
+    """
+    Extracts JSON content from a string that contains JSON data embedded within it.
+
+    Args:
+        input_string (str): The input string containing JSON data.
+
+    Returns:
+        Dict[str, Any]: The parsed JSON content as a dictionary.
+    """
+    # Regular expression to match JSON content
+    json_regex = re.compile(r'```json\n({.*?})\n```', re.DOTALL)
+    
+    # Search for JSON content within the input string
+    match = json_regex.search(input_string)
+    
+    if not match:
+        raise ValueError("No JSON content found in the input string.")
+    
+    # Extract JSON content
+    json_content = match.group(1)
+    
+    # Parse JSON content
+    parsed_json = json.loads(json_content)
+    
+    return parsed_json
+
+
 
 class DocumentParser:
     """
@@ -120,7 +150,8 @@ if __name__ == "__main__":
     
     for text in all_valid_text:
         filter_text =  [i for i in text if i.strip()]
-        new_all_valid_text.extend(filter_text)
+        new_all_valid_text.append([filter_text])
+        
     
     template = """ please attempt to organize the {unstrucutred_data} from the OCR 
     and try to properly group it and turn it into a json format.  
@@ -129,10 +160,19 @@ if __name__ == "__main__":
     prompt = PromptTemplate.from_template(template)
 
 
+    # llm = HuggingFaceEndpoint(
+    # repo_id="mistralai/Mistral-7B-Instruct-v0.3", 
+    # temperature=0.1, 
+    # # max_new_tokens=1024,
+    # repetition_penalty=1.2,
+    # return_full_text=False
+    #     )
+
     llm = HuggingFaceEndpoint(
-    repo_id="mistralai/Mistral-7B-Instruct-v0.3", 
-    temperature=0.1, 
-    max_new_tokens=1024,
+    # repo_id="mistralai/Mistral-7B-Instruct-v0.3", 
+    repo_id="mistralai/Mistral-7B-Instruct-v0.2", 
+    # temperature=1, 
+    # max_new_tokens=1024,
     repetition_penalty=1.2,
     return_full_text=False
         )
@@ -140,10 +180,24 @@ if __name__ == "__main__":
 
     llm_chain = prompt | llm
 
-    
-    temp_data_name:List[str] = [llm_chain.invoke({"unstrucutred_data": i}) for i in new_all_valid_text]
+    sample_text = new_all_valid_text[0]
+    temp_data_name:List[str] = [llm_chain.invoke({"unstrucutred_data": i}) for i in sample_text]
 
     # Will return None if the LLM did not format the output correctly
-    json_ouput_as_json:List[Dict] = [json_string_to_json(i) for i in temp_data_name]
+    # json_ouput_as_json:List[Dict] = [extract_json_from_string(i) for i in temp_data_name]
+    sample = []
+    for i in temp_data_name:
+        try:
+            data = extract_json_from_string(i)
+            sample.append(data)
+        except:
+            print("hmm")
+        try:
+            alt_data = json_string_to_json(i)
+            sample.append(alt_data)
+        except:
+            print("thing")
+    
+    print(data)
 
     x = 0
