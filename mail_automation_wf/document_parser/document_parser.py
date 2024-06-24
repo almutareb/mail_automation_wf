@@ -10,6 +10,8 @@ from langchain_huggingface import HuggingFaceEndpoint
 from langchain_core.prompts import PromptTemplate
 import json
 import re
+from langchain_openai import OpenAI
+from mail_automation_wf.ocr_document import OCRDocument
 # from mail_automation_wf.utils.file_handling import  json_string_to_json
 
 def json_string_to_json(json_string: str) -> Any:
@@ -77,6 +79,7 @@ class DocumentParser:
         self.pdf_file_location = pdf_file_location
         self.ocr_output_location = ocr_output_location
         self.pdf_images: List[str] = []
+        self.ocr_documents: List[OCRDocument] = []
         
         
     def pdf_to_images(
@@ -121,14 +124,25 @@ class DocumentParser:
         """
         
         data = []
-        for i in self.pdf_images:
+        self.ocr_documents = []
+        # for i in self.pdf_images:
+        for num,i in enumerate(self.pdf_images):
+        
             temp_output = pytesseract.image_to_data(
-                Image.open(
-                    i),
-                    lang=lang,
-                    output_type=ocr_output_type,
-                )
-            data.append(temp_output)
+                    Image.open(
+                        i),
+                        lang=lang,
+                        output_type=ocr_output_type,
+                    )
+            data.append(temp_output)       
+            
+            temp_doc = OCRDocument(
+                page_num=num,
+                image_location=i,
+                document_lang=lang,
+                ocr_metadata=temp_output,
+            )
+            self.ocr_documents.append(temp_doc)
         return data
     
 if __name__ == "__main__":
@@ -168,15 +182,19 @@ if __name__ == "__main__":
     # return_full_text=False
     #     )
 
-    llm = HuggingFaceEndpoint(
-    # repo_id="mistralai/Mistral-7B-Instruct-v0.3", 
-    repo_id="mistralai/Mistral-7B-Instruct-v0.2", 
-    # temperature=1, 
-    # max_new_tokens=1024,
-    repetition_penalty=1.2,
-    return_full_text=False
-        )
+    # llm = HuggingFaceEndpoint(
+    # # repo_id="mistralai/Mistral-7B-Instruct-v0.3", 
+    # repo_id="mistralai/Mistral-7B-Instruct-v0.2", 
+    # # temperature=1, 
+    # # max_new_tokens=1024,
+    # max_new_tokens=2000,
+    # repetition_penalty=1.2,
+    # return_full_text=False
+    #     )
 
+    llm = OpenAI(
+        max_tokens=3500
+    )
 
     llm_chain = prompt | llm
 

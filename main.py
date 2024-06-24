@@ -5,12 +5,17 @@ from mail_automation_wf.utils.file_handling import  (
 from typing import List, Dict, Any
 from langchain_huggingface import HuggingFaceEndpoint
 from langchain_core.prompts import PromptTemplate
-
-
+from mail_automation_wf.chains import (
+    ocr_structure_prompt,
+    json_summary_chain_prompt,
+    document_classification_chain_prompt,
+    document_qa_prompt,
+    )
 
 if __name__ == "__main__":
     document_parser = DocumentParser(
         pdf_file_location="examples/blank_documenr.pdf",
+        # pdf_file_location="examples/populated_document.pdf",
         ocr_output_location="test_sample",
     )
     
@@ -18,50 +23,73 @@ if __name__ == "__main__":
     
     data = document_parser.image_to_text()
     
-    all_valid_text = [i['text'] for i in data]
+    ocr_document_text:List[str] = [i.text for i in document_parser.ocr_documents]
     
-    new_all_valid_text = []
-    
-    for text in all_valid_text:
-        filter_text =  [i for i in text if i.strip()]
-        new_all_valid_text.append([filter_text])
-        
-    
-    template = """ convert
-    =================
-    {unstrucutred_data} 
-    ====================
-    from the OCR into json that is compatible with json
-
-    """
-    # template = """ organize {unstrucutred_data} from the OCR 
-    # and try to properly group it and turn it into a json .  
-    # """
-
-    prompt = PromptTemplate.from_template(template)
 
     llm = HuggingFaceEndpoint(
     repo_id="mistralai/Mistral-7B-Instruct-v0.3", 
     # repo_id="mistralai/Mistral-7B-Instruct-v0.2", 
+    # repo_id="mistralai/Mixtral-8x7B-Instruct-v0.1", 
+    # repo_id="microsoft/Phi-3-medium-128k-instruct", 
+    # repo_id="meta-llama/Meta-Llama-3-8B-Instruct", 
     # temperature=1, 
     max_new_tokens=1024,
+    # max_new_tokens=2024,
     repetition_penalty=1.2,
     return_full_text=False
         )
     
-    llm_chain = prompt | llm
+    
 
-    sample_text = new_all_valid_text[0]
-    temp_data_name:List[str] = [llm_chain.invoke({"unstrucutred_data": i}) for i in sample_text]
+    sample_text = ocr_document_text [0]
+    
+    mid_index = len(sample_text) // 2
+
+    sample_text = sample_text[:mid_index], sample_text[mid_index:]
+
+
+
+    ocr_structure_chain = ocr_structure_prompt | llm
+    temp_data_name:List[str] = [ocr_structure_chain.invoke({"unstrucutred_data": i}) for i in sample_text]
     
     try: 
-        sample = extract_json_from_string(temp_data_name[0])
+        ocr_json = extract_json_from_string(temp_data_name[0])
+        print("pre-processing document was successful")
     except:
-        print("something whent wrong")
+        print("Issue pre parsing the json")
         
     try:
-        sample = json_string_to_json(temp_data_name[0])
+        ocr_json = json_string_to_json(temp_data_name[0])
+        print("Sucessful without preproccessing")
     except:
-        print("something whent wrong")
+        print("parsing unsuccessfull")
+        
+        
+    # allow the user the create categories
+    # make a summary
+    # create a ticket
+    
+    
+    summary_chain = json_summary_chain_prompt | llm
+    
+    data_sample = summary_chain.invoke({"unstrucutred_data": str(ocr_json)})
+    
+    
+    
+    classify_document_chain = document_classification_chain_prompt | llm 
+    
+    classify_sample = classify_document_chain.invoke({"document": str(ocr_json)})
+    
+    #5 Questions
+    # who is the insured
+    # Insurer address
+    # policy number
+    # summary of case
+    # where
+    # when
+    
+    document_qa_chain = document_qa_prompt | llm
+    
+    qa_answers = document_qa_chain.invoke({"JSONOCR": str(ocr_json), "SUMMARY": data_sample})
     
     x = 0
