@@ -165,3 +165,6 @@ cython_debug/
 
 # don't sync nougat
 nougat/
+fetch_mail/client.json
+fetch_mail/credentials.json
+fetch_mail/token.pickle
