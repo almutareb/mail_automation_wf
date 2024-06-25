@@ -10,12 +10,13 @@ from mail_automation_wf.chains import (
     json_summary_chain_prompt,
     document_classification_chain_prompt,
     document_qa_prompt,
+    user_questions_prompt
     )
 
 if __name__ == "__main__":
     document_parser = DocumentParser(
-        pdf_file_location="examples/blank_documenr.pdf",
-        # pdf_file_location="examples/populated_document.pdf",
+        # pdf_file_location="examples/blank_documenr.pdf",
+        pdf_file_location="examples/populated_document.pdf",
         ocr_output_location="test_sample",
     )
     
@@ -28,17 +29,11 @@ if __name__ == "__main__":
 
     llm = HuggingFaceEndpoint(
     repo_id="mistralai/Mistral-7B-Instruct-v0.3", 
-    # repo_id="mistralai/Mistral-7B-Instruct-v0.2", 
-    # repo_id="mistralai/Mixtral-8x7B-Instruct-v0.1", 
-    # repo_id="microsoft/Phi-3-medium-128k-instruct", 
-    # repo_id="meta-llama/Meta-Llama-3-8B-Instruct", 
-    # temperature=1, 
     max_new_tokens=1024,
     # max_new_tokens=2024,
     repetition_penalty=1.2,
     return_full_text=False
         )
-    
     
 
     sample_text = ocr_document_text [0]
@@ -46,8 +41,6 @@ if __name__ == "__main__":
     mid_index = len(sample_text) // 2
 
     sample_text = sample_text[:mid_index], sample_text[mid_index:]
-
-
 
     ocr_structure_chain = ocr_structure_prompt | llm
     temp_data_name:List[str] = [ocr_structure_chain.invoke({"unstrucutred_data": i}) for i in sample_text]
@@ -64,32 +57,34 @@ if __name__ == "__main__":
     except:
         print("parsing unsuccessfull")
         
-        
-    # allow the user the create categories
-    # make a summary
-    # create a ticket
-    
     
     summary_chain = json_summary_chain_prompt | llm
     
-    data_sample = summary_chain.invoke({"unstrucutred_data": str(ocr_json)})
-    
+    document_summary = summary_chain.invoke({"unstrucutred_data": str(ocr_json)})
     
     
     classify_document_chain = document_classification_chain_prompt | llm 
     
-    classify_sample = classify_document_chain.invoke({"document": str(ocr_json)})
-    
-    #5 Questions
-    # who is the insured
-    # Insurer address
-    # policy number
-    # summary of case
-    # where
-    # when
+    document_type = classify_document_chain.invoke({"document": str(ocr_json)})
     
     document_qa_chain = document_qa_prompt | llm
     
-    qa_answers = document_qa_chain.invoke({"JSONOCR": str(ocr_json), "SUMMARY": data_sample})
+    qa_answers = document_qa_chain.invoke({"JSONOCR": str(ocr_json), "SUMMARY": document_summary})
     
+    
+    user_questions = [
+        "who is the insured?",
+        "What is the Insurer address?",
+        "What is the Policy Number?",
+        "Where is this event took place?",
+        "when did this event took place?",
+    ]
+    
+    user_question_chain = user_questions_prompt | llm
+    
+    answered_user_questions = []
+    for questions in user_questions:
+        temp_answer = user_question_chain.invoke({"JSONOCR": str(ocr_json), "SUMMARY": document_summary, "QUESTION":questions})
+        answered_user_questions.append(temp_answer)
+        
     x = 0
