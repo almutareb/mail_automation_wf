@@ -6,3 +6,4 @@ Pillow
 pandas
 langchain-huggingface
 huggingface_hub
+pywin32
