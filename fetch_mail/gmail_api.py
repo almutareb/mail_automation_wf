@@ -11,9 +11,11 @@ from email.utils import parsedate_to_datetime
 import base64
 from pathlib import Path
 import json
+from email.mime.text import MIMEText
 
 
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+
+SCOPES = ['https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/gmail.readonly']
 
 
 def get_service(credentials_json:str='credentials.json') -> Resource:
@@ -114,7 +116,7 @@ def get_attachment(message_payload:dict,
     return attachments
 
 
-def get_message_details(service, user_id='me', msg_id=None) -> dict | None:
+def get_message_details(service:Resource, user_id='me', msg_id=None) -> dict | None:
     """ Returns the message details as a dict """
 
     try:
@@ -197,6 +199,31 @@ def main():
             add_email_to_json(emails_json_file="emails.json", email_data=email_data)
 
 
+def create_message(sender:str, to:str, subject:str, message_text:str) -> dict:
+    """ Creates an email message """
+    message = MIMEText(message_text)
+    message['to'] = to
+    message['from'] = sender
+    message['subject'] = subject
+    raw_message = base64.urlsafe_b64encode(message.as_string().encode("utf-8"))
+    return {'raw': raw_message.decode("utf-8")}
+
+
+def send_message(service:Resource, user_id='me', message:dict=None):
+    try:
+        message = service.users().messages().send(userId=user_id, body=message).execute()
+        print('Message Id: %s' % message['id'])
+        return message
+    except Exception as e:
+        print('An error occurred: %s' % e)
+        return None
+
+
 if __name__ == "__main__":
-    main()
-    
+    # main()
+    service = get_service()
+    msg = create_message(sender='me', to='karan@artiquare.com', subject='Test sending email', message_text="Thank you for getting in touch")
+    message = send_message(service=service, message=msg)
+    print(f"{type(message) = }")
+    print(f"{message = }")
+
