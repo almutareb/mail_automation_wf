@@ -12,12 +12,10 @@ import base64
 from pathlib import Path
 import json
 from email.mime.text import MIMEText
-from email.utils import parsedate_to_datetime
-import pandas as pd
 
 
-SCOPES = ['https://www.googleapis.com/auth/gmail.send',
-          'https://www.googleapis.com/auth/gmail.readonly']
+
+SCOPES = ['https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/gmail.readonly']
 
 
 def get_service(credentials_json: str = 'credentials.json', token_file:str = 'token.pickle') -> Resource:
@@ -150,18 +148,8 @@ def get_attachment(message_payload: dict,
     return attachments
 
 
-def get_message_details(service: Resource, user_id='me', msg_id=None, attachment_dir:str=None) -> dict | None:
-    """ Returns the message details as a dict 
-
-    Args:
-        service (Resource) : Gmail authentication flow resource
-        user_d (str): set to 'me' to access own account
-        msg_id (str): set to None as a placeholder -> msg_id will be passed to this function
-        attachment_dir (str): the folder location where to save the attachments 
-    
-    Returns:
-        dict: dictionary with the id, from, to, subject, date, body and attachments  
-    """
+def get_message_details(service:Resource, user_id='me', msg_id=None) -> dict | None:
+    """ Returns the message details as a dict """
 
     try:
         message = service.users().messages().get(userId=user_id, id=msg_id, format='full').execute()
@@ -278,43 +266,13 @@ def get_emails(service: Resource,
         print("No messages")
         return
     for message in messages:
-        email_data = get_message_details(service=service, 
-                                         msg_id=message['id'], 
-                                         attachment_dir=attachment_dir)
-        # Filter the emails by subject keywords
-        if subject_filter in email_data['subject']:
-            message_id = email_data['id']
-            
-            # Check if the email has already been saved
-            file_path = Path(emails_json_dir)/f"{message_id}.json"
-            if file_path.exists():
-                print(f"Message with id: {message_id} already exists -> not saving it again")
-                return 
-            
-            # Save the email data as json
-            with open(file=file_path, mode='w', encoding='utf-8') as json_file:
-                json.dump(obj=email_data, fp=json_file, indent=4)
-            
-            # Update the status file
-            df = pd.read_csv(filepath_or_buffer=status_file)
-            if message_id in df['message_id'].values:
-                print('Email with message id: {message_id} already exists in status file -> not adding it again')
-                return
-            status_data = {"message_id" : message_id,
-                           "email_downloaded" : True,
-                           "email_categorized" : False,
-                           "ocr_completed" : False}
-            df.loc[len(df)] = status_data
-            df.to_csv(path_or_buf=status_file, index=False)
-
-            # Add message_id to be returned
-            message_ids.append(message_id)
-            print(f'get_emails() got email with message id {message_id}')
-            
-    return message_ids
+        email_data = get_message_details(service=service, msg_id=message['id'])
+        # Condition to save the email
+        if 'Test_App_Email_1234' in email_data['subject']:
+            add_email_to_json(emails_json_file="emails.json", email_data=email_data)
 
 
-def create_message(sender: str, to: str, subject: str, message_text: str) -> dict:
+def create_message(sender:str, to:str, subject:str, message_text:str) -> dict:
     """ Creates an email message """
     message = MIMEText(message_text)
     message['to'] = to
@@ -324,10 +282,9 @@ def create_message(sender: str, to: str, subject: str, message_text: str) -> dic
     return {'raw': raw_message.decode("utf-8")}
 
 
-def send_message(service: Resource, user_id='me', message: dict = None):
+def send_message(service:Resource, user_id='me', message:dict=None):
     try:
-        message = service.users().messages().send(
-            userId=user_id, body=message).execute()
+        message = service.users().messages().send(userId=user_id, body=message).execute()
         print('Message Id: %s' % message['id'])
         return message
     except Exception as e:
@@ -336,14 +293,10 @@ def send_message(service: Resource, user_id='me', message: dict = None):
 
 
 if __name__ == "__main__":
-    # service = get_service()
-    # Create a message that you want to send -> add the receipient (to), subject and body (message_text)
-    # msg = create_message(sender='me', to='karan@artiquare.com', subject='Test sending email', message_text="Thank you for getting in touch")
-    # Send the message
-    # message = send_message(service=service, message=msg)
-    
-    print(Path().cwd())
-    print((Path().cwd().parent /'working').is_dir())
-    print(f"{Path(__file__).parent.parent.resolve() = }")
-          
+    # main()
+    service = get_service()
+    msg = create_message(sender='me', to='karan@artiquare.com', subject='Test sending email', message_text="Thank you for getting in touch")
+    message = send_message(service=service, message=msg)
+    print(f"{type(message) = }")
+    print(f"{message = }")
 
