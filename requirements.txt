@@ -7,3 +7,6 @@ pandas
 langchain-huggingface
 huggingface_hub
 pywin32
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib

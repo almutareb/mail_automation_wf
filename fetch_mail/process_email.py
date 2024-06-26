@@ -123,8 +123,9 @@ if __name__ == "__main__":
     return_full_text=False,
     huggingfacehub_api_token=HF_API_TOKEN) 
 
+    
+    check_for_new_mail(emails_jason_file='emails.json', status_file='email_status.csv')
     unprocessed_emails = get_unprocessed_emails(status_file='email_status.csv')
-
     process_emails(unprocessed_emails=unprocessed_emails,
                    emails_jason_file='emails.json', 
                    status_file='email_status.csv',

@@ -98,11 +98,14 @@ def get_email_from_outlook(user_id:str,
             received_time_pywin = message.ReceivedTime
             received_time_dt = datetime.fromtimestamp(received_time_pywin.timestamp()).strftime("%d-%m-%Y- %H:%M:%S")
             attachtment_paths = save_attachments(attachments=attachments, email_entry_id=email_entry_id, attachment_dir=attachment_dir)
+            from_email = message.SenderEmailAddress
             
             print(f'Found message in inbox {subject=}, {received_time_dt = }')
 
             email_data.append({
                 'entry_id':email_entry_id,
+                'from':from_email,
+                'to': user_id,
                 'subject':subject,
                 'body': body,
                 'received_time': received_time_dt,
