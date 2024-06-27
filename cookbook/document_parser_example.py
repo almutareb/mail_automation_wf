@@ -1,11 +1,11 @@
-from mail_automation_wf.document_parser.document_parser import DocumentParser
-from mail_automation_wf.utils.file_handling import  (
+from ocr_processing.document_parser.document_parser import DocumentParser
+from ocr_processing.utils.file_handling import  (
     extract_json_from_string, json_string_to_json
 )
 from typing import List, Dict, Any
 from langchain_huggingface import HuggingFaceEndpoint
 from langchain_core.prompts import PromptTemplate
-from mail_automation_wf.chains import (
+from ocr_processing.chains import (
     ocr_structure_prompt,
     json_summary_chain_prompt,
     document_classification_chain_prompt,

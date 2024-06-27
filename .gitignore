@@ -168,3 +168,5 @@ nougat/
 fetch_mail/client.json
 fetch_mail/credentials.json
 fetch_mail/token.pickle
+
+.vscode/
