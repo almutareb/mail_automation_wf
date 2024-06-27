@@ -10,8 +10,8 @@ Based on my research "mistralai/Mixtral-8x22B-Instruct-v0.1" seems to do a good 
 from langchain_huggingface import HuggingFaceEndpoint
 from langchain_core.prompts import PromptTemplate
 
-from mail_automation_wf.ocr.utils.pdf_to_dir import pdf_to_images
-from mail_automation_wf.utils.file_handling import read_file, json_string_to_json
+from ocr_processing.ocr.utils.pdf_to_dir import pdf_to_images
+from ocr_processing.utils.file_handling import read_file, json_string_to_json
 
 import pytesseract
 from pytesseract import Output

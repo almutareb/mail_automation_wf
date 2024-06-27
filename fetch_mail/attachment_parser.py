@@ -10,8 +10,8 @@ current_dir = Path(__file__).resolve().parent
 parent_dir = current_dir.parent    
 sys.path.append(str(parent_dir))
 
-from mail_automation_wf.ocr.utils.pdf_to_dir import pdf_to_images
-from mail_automation_wf.utils.file_handling import read_file, json_string_to_json
+from ocr_processing.ocr.utils.pdf_to_dir import pdf_to_images
+from ocr_processing.utils.file_handling import read_file, json_string_to_json
 
 
 def parse_attachment(attachment_loc:str) -> str:

@@ -10,7 +10,7 @@ from langchain_huggingface import HuggingFaceEndpoint
 from langchain_core.prompts import PromptTemplate
 import json
 import re
-from mail_automation_wf.ocr_document import OCRDocument
+from ocr_processing.ocr_document import OCRDocument
 # from mail_automation_wf.utils.file_handling import  json_string_to_json
 
 def json_string_to_json(json_string: str) -> Any:
