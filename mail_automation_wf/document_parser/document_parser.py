@@ -9,6 +9,8 @@ from PIL import Image
 from langchain_huggingface import HuggingFaceEndpoint
 from langchain_core.prompts import PromptTemplate
 import json
+import re
+from mail_automation_wf.ocr_document import OCRDocument
 # from mail_automation_wf.utils.file_handling import  json_string_to_json
 
 def json_string_to_json(json_string: str) -> Any:
@@ -26,6 +28,35 @@ def json_string_to_json(json_string: str) -> Any:
     except json.JSONDecodeError as e:
         print(f"An error occurred while parsing the JSON string: {e}")
         return None
+    
+def extract_json_from_string(input_string: str) -> Dict[str, Any]:
+    """
+    Extracts JSON content from a string that contains JSON data embedded within it.
+
+    Args:
+        input_string (str): The input string containing JSON data.
+
+    Returns:
+        Dict[str, Any]: The parsed JSON content as a dictionary.
+    """
+    # Regular expression to match JSON content
+    json_regex = re.compile(r'```json\n({.*?})\n```', re.DOTALL)
+    
+    # Search for JSON content within the input string
+    match = json_regex.search(input_string)
+    
+    if not match:
+        raise ValueError("No JSON content found in the input string.")
+    
+    # Extract JSON content
+    json_content = match.group(1)
+    
+    # Parse JSON content
+    parsed_json = json.loads(json_content)
+    
+    return parsed_json
+
+
 
 class DocumentParser:
     """
@@ -47,6 +78,7 @@ class DocumentParser:
         self.pdf_file_location = pdf_file_location
         self.ocr_output_location = ocr_output_location
         self.pdf_images: List[str] = []
+        self.ocr_documents: List[OCRDocument] = []
         
         
     def pdf_to_images(
@@ -55,12 +87,10 @@ class DocumentParser:
         """
         Convert a PDF to images and save them to the specified directory.
 
-        Args:
-            pdf_path (str): The path to the PDF file to convert.
-            output_dir (str): The directory where the images will be saved.
+        ## Args:
 
-        Returns:
-            List[str]: A list of file paths to the saved images.
+        ## Returns:
+            None
         """
         # Ensure output directory exists
         os.makedirs(self.ocr_output_location, exist_ok=True)
@@ -83,21 +113,35 @@ class DocumentParser:
         **kwargs
         ) -> List[Dict]:
         """This function runs ocr on the given images
-        
-        Keyword arguments:
-        argument -- description
-        Return: return_description
+        After running OCR on the pdf images, 
+        ## Keyword arguments:
+        ## argument
+        - ocr_output_type : the type of outputs you want the ocr to return
+        - lang: the language of the document images. Default to "deu" or german
+        ## Return: 
+        - None
         """
         
         data = []
-        for i in self.pdf_images:
+        self.ocr_documents = []
+        # for i in self.pdf_images:
+        for num,i in enumerate(self.pdf_images):
+        
             temp_output = pytesseract.image_to_data(
-                Image.open(
-                    i),
-                    lang=lang,
-                    output_type=ocr_output_type,
-                )
-            data.append(temp_output)
+                    Image.open(
+                        i),
+                        lang=lang,
+                        output_type=ocr_output_type,
+                    )
+            data.append(temp_output)       
+            
+            temp_doc = OCRDocument(
+                page_num=num,
+                image_location=i,
+                document_lang=lang,
+                ocr_metadata=temp_output,
+            )
+            self.ocr_documents.append(temp_doc)
         return data
     
 if __name__ == "__main__":
@@ -119,7 +163,8 @@ if __name__ == "__main__":
     
     for text in all_valid_text:
         filter_text =  [i for i in text if i.strip()]
-        new_all_valid_text.extend(filter_text)
+        new_all_valid_text.append([filter_text])
+        
     
     template = """ please attempt to organize the {unstrucutred_data} from the OCR 
     and try to properly group it and turn it into a json format.  
@@ -128,10 +173,20 @@ if __name__ == "__main__":
     prompt = PromptTemplate.from_template(template)
 
 
+    # llm = HuggingFaceEndpoint(
+    # repo_id="mistralai/Mistral-7B-Instruct-v0.3", 
+    # temperature=0.1, 
+    # # max_new_tokens=1024,
+    # repetition_penalty=1.2,
+    # return_full_text=False
+    #     )
+
     llm = HuggingFaceEndpoint(
-    repo_id="mistralai/Mistral-7B-Instruct-v0.3", 
-    temperature=0.1, 
-    max_new_tokens=1024,
+    # repo_id="mistralai/Mistral-7B-Instruct-v0.3", 
+    repo_id="mistralai/Mistral-7B-Instruct-v0.2", 
+    # temperature=1, 
+    # max_new_tokens=1024,
+    max_new_tokens=2000,
     repetition_penalty=1.2,
     return_full_text=False
         )
@@ -139,10 +194,24 @@ if __name__ == "__main__":
 
     llm_chain = prompt | llm
 
-    
-    temp_data_name:List[str] = [llm_chain.invoke({"unstrucutred_data": i}) for i in new_all_valid_text]
+    sample_text = new_all_valid_text[0]
+    temp_data_name:List[str] = [llm_chain.invoke({"unstrucutred_data": i}) for i in sample_text]
 
     # Will return None if the LLM did not format the output correctly
-    json_ouput_as_json:List[Dict] = [json_string_to_json(i) for i in temp_data_name]
+    # json_ouput_as_json:List[Dict] = [extract_json_from_string(i) for i in temp_data_name]
+    sample = []
+    for i in temp_data_name:
+        try:
+            data = extract_json_from_string(i)
+            sample.append(data)
+        except:
+            print("hmm")
+        try:
+            alt_data = json_string_to_json(i)
+            sample.append(alt_data)
+        except:
+            print("thing")
+    
+    print(data)
 
     x = 0

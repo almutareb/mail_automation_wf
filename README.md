@@ -36,3 +36,17 @@ in the example code `populated_document_parser.py` and `unpopulated_document_par
 Please check the documentation of tesseract to learn how to
 1. download the tesseract executible file
 2. download the German language pack, which is needed for the POC
+
+### Code Example
+
+```python
+    document_parser = DocumentParser(
+        pdf_file_location="examples/blank_documenr.pdf",
+        ocr_output_location="test_sample",
+    )
+    
+    
+    document_parser.pdf_to_images()
+    
+    document_text = document_parser.image_to_text()
+```
