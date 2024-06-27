@@ -1,10 +1,14 @@
 """
-This module is for mail automation
+
+This module is for OCR handling of documents
+
+## Classes
+- DocumentParser
+- OCRDocument
 
 
-- allow the user the create categories
-- make a summary
-- create a ticket
-
+## Goals of this Module
+- allow the user the create categories for their documents
+- make a summary for a document
 
 """
