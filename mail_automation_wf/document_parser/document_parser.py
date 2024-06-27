@@ -10,7 +10,6 @@ from langchain_huggingface import HuggingFaceEndpoint
 from langchain_core.prompts import PromptTemplate
 import json
 import re
-from langchain_openai import OpenAI
 from mail_automation_wf.ocr_document import OCRDocument
 # from mail_automation_wf.utils.file_handling import  json_string_to_json
 
@@ -182,19 +181,16 @@ if __name__ == "__main__":
     # return_full_text=False
     #     )
 
-    # llm = HuggingFaceEndpoint(
-    # # repo_id="mistralai/Mistral-7B-Instruct-v0.3", 
-    # repo_id="mistralai/Mistral-7B-Instruct-v0.2", 
-    # # temperature=1, 
-    # # max_new_tokens=1024,
-    # max_new_tokens=2000,
-    # repetition_penalty=1.2,
-    # return_full_text=False
-    #     )
+    llm = HuggingFaceEndpoint(
+    # repo_id="mistralai/Mistral-7B-Instruct-v0.3", 
+    repo_id="mistralai/Mistral-7B-Instruct-v0.2", 
+    # temperature=1, 
+    # max_new_tokens=1024,
+    max_new_tokens=2000,
+    repetition_penalty=1.2,
+    return_full_text=False
+        )
 
-    llm = OpenAI(
-        max_tokens=3500
-    )
 
     llm_chain = prompt | llm
 
