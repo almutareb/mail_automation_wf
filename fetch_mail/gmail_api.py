@@ -1,6 +1,6 @@
 # In Google Cloud console -> API & Services -> Library -> search for Gmail API -> ensure Gmail API is enabled
 # In Google Cloud console -> API & Services -> Credentials -> create Auth02 credential -> download json and save as credentials.json
-# In Google Cloud console -> API & Services -> OAuth consent screen -> Test users -> insert the email ID of the user 
+# In Google Cloud console -> API & Services -> OAuth consent screen -> Test users -> insert the email ID of the user
 
 import os
 import pickle
@@ -12,35 +12,38 @@ import base64
 from pathlib import Path
 import json
 from email.mime.text import MIMEText
+from email.utils import parsedate_to_datetime
+import pandas as pd
 
 
+SCOPES = ['https://www.googleapis.com/auth/gmail.send',
+          'https://www.googleapis.com/auth/gmail.readonly']
 
-SCOPES = ['https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/gmail.readonly']
 
-
-def get_service(credentials_json:str='credentials.json') -> Resource:
+def get_service(credentials_json: str = 'credentials.json', token_file:str = 'token.pickle') -> Resource:
     """ Creates a Gmail authentication flow """
     creds = None
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
+    if os.path.exists(token_file):
+        with open(file=token_file, mode='rb') as token:
             creds = pickle.load(token)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(client_secrets_file=credentials_json, 
+            flow = InstalledAppFlow.from_client_secrets_file(client_secrets_file=credentials_json,
                                                              scopes=SCOPES)
             creds = flow.run_local_server(port=0)
-        with open('token.pickle', 'wb') as token:
+        with open(file=token_file, mode='wb') as token:
             pickle.dump(creds, token)
 
     service = build('gmail', 'v1', credentials=creds)
-    return service  
+    return service
 
 
-def get_messages(service:Resource, user_id='me', label_ids=['INBOX']) -> list | None:
+def get_messages(service: Resource, user_id='me', label_ids=['INBOX']) -> list | None:
     try:
-        response = service.users().messages().list(userId=user_id, labelIds=label_ids).execute()
+        response = service.users().messages().list(
+            userId=user_id, labelIds=label_ids).execute()
         messages = response.get('messages', [])
         return messages
     except Exception as e:
@@ -48,7 +51,7 @@ def get_messages(service:Resource, user_id='me', label_ids=['INBOX']) -> list | 
         return None
 
 
-def get_email_body(message_payload:dict) -> str | None:
+def get_email_body(message_payload: dict) -> str | None:
     """ Returns the email body as a string """
 
     if 'parts' in message_payload:
@@ -64,51 +67,82 @@ def get_email_body(message_payload:dict) -> str | None:
     elif 'body' in message_payload:
         if 'data' in message_payload['body']:
             return base64.urlsafe_b64decode(message_payload['body']['data']).decode('utf-8')
-    
+
     # If no text/plain part is found
     return None
 
 
-def get_attachment(message_payload:dict, 
-                   service:Resource, 
-                   user_id='me', 
-                   msg_id=None, 
-                   attachment_dir:str='Attachments') -> list[str]:
+def has_attachments(message_payload:dict) -> bool:
+    """ Returns True if there is an attachment
+    """
+    if 'parts' in message_payload:
+        for part in message_payload['parts']:
+            if part.get('filename'):
+                return True
+            if 'parts' in part:
+                if has_attachments(part):
+                    return True
+    return False
+
+
+def get_attachment(message_payload: dict,
+                   service: Resource,
+                   user_id='me',
+                   msg_id=None,
+                   attachment_dir: str = None) -> list[str]:
     """ Download the attachment from an email to disk """
     attachments = []
+    
     try:
         if 'parts' in message_payload:
             for part in message_payload['parts']:
                 if part.get('filename'):
+
+                    # Create a folder with the name of the message ID    
+                    project_dir = Path(__file__).parent.parent.resolve()
+
+                    attachment_folder = project_dir/ attachment_dir / str(msg_id)
+                    attachment_folder.mkdir(parents=True, exist_ok=True)
+
                     attachment_name = part['filename']
                     if 'data' in part['body']:
-                        file_data = base64.urlsafe_b64decode(part['body']['data'].encode('UTF-8'))
+                        file_data = base64.urlsafe_b64decode(
+                            part['body']['data'].encode('UTF-8'))
                     elif 'attachmentId' in part['body']:
-                        attachment = service.users().messages().attachments().get(userId=user_id, 
-                                                                                messageId=msg_id, 
-                                                                                id=part['body']['attachmentId']
-                                                                                ).execute()
+                        attachment = service.users().messages().attachments().get(userId=user_id,
+                                                                                  messageId=msg_id,
+                                                                                  id=part['body']['attachmentId']
+                                                                                  ).execute()
                         file_data = base64.urlsafe_b64decode(attachment['data'].encode('UTF-8'))
                     else:
                         file_data = None
                         print(f'No file data')
-                    
-                    if file_data:
-                        attachment_save_name = f'{msg_id}_{attachment_name}'
-                        # Actual path to disk
-                        attachment_save_path = (Path.cwd()/attachment_dir/attachment_save_name).as_posix()
-                        # Relative path to dict/json
-                        project_dir = Path.cwd().parent.parent.name
-                        project_dir_idx = Path.cwd().parts.index(project_dir)
-                        relative_path = '/'.join(Path.cwd().parts[project_dir_idx:])
-                        attachments.append(f"{relative_path}/{attachment_dir}/{attachment_save_name}")
 
-                        if (Path.cwd()/attachment_dir/attachment_save_name).exists():
-                            print("File already exists -> not saving")
+                    if file_data:
+                        # attachment_save_name = f'{msg_id}_{attachment_name}'
+                        # # Actual path to disk
+                        # attachment_save_path = (Path.cwd()/attachment_dir/attachment_save_name).as_posix()
+                        # # Relative path to dict/json
+                        # project_dir = Path.cwd().parent.parent.name
+                        # project_dir_idx = Path.cwd().parts.index(project_dir)
+                        # relative_path = '/'.join(Path.cwd().parts[project_dir_idx:])
+                        # attachments.append(f"{relative_path}/{attachment_dir}/{attachment_save_name}")
+                        
+                        # if (Path.cwd()/attachment_dir/attachment_folder/attachment_name).exists():
+                        #     print("Attachment already exists -> not saving it again")
+                        # else:
+                        #     with open(file=attachment_save_path, mode='wb') as f:
+                        #         f.write(file_data)
+
+                        attachments.append(attachment_name)
+
+                        
+                        attachment_save_path = attachment_folder/attachment_name
+                        if attachment_save_path.exists():
+                            print("Attachment already exists -> not saving it again")
                         else:
-                            with open(file=attachment_save_path, mode='wb') as f:
+                            with open(file=attachment_save_path.as_posix(), mode='wb') as f:
                                 f.write(file_data)
-                    
 
     except Exception as error:
         print(f'An error occurred: {error}')
@@ -116,49 +150,58 @@ def get_attachment(message_payload:dict,
     return attachments
 
 
-def get_message_details(service:Resource, user_id='me', msg_id=None) -> dict | None:
-    """ Returns the message details as a dict """
+def get_message_details(service: Resource, user_id='me', msg_id=None, attachment_dir:str=None) -> dict | None:
+    """ Returns the message details as a dict 
+
+    Args:
+        service (Resource) : Gmail authentication flow resource
+        user_d (str): set to 'me' to access own account
+        msg_id (str): set to None as a placeholder -> msg_id will be passed to this function
+        attachment_dir (str): the folder location where to save the attachments 
+    
+    Returns:
+        dict: dictionary with the id, from, to, subject, date, body and attachments  
+    """
 
     try:
         message = service.users().messages().get(userId=user_id, id=msg_id, format='full').execute()
-        
+
         headers = message['payload']['headers']
 
-               
         subject = next((header['value'] for header in headers if header['name'].lower() == 'subject'), 'No subject')
         from_email = next((header['value'] for header in headers if header['name'].lower() == 'from'), 'No sender')
         to_email = next((header['value'] for header in headers if header['name'].lower() == 'to'), 'No recipient')
         date = next((header['value'] for header in headers if header['name'].lower() == 'date'), 'No date')
         body = get_email_body(message['payload'])
-        attachments = get_attachment(message_payload=message['payload'], 
-                                          service=service, 
-                                          user_id=user_id, 
-                                          msg_id=msg_id)
+        attachments = get_attachment(message_payload=message['payload'],
+                                     service=service,
+                                     user_id=user_id,
+                                     msg_id=msg_id,
+                                     attachment_dir=attachment_dir)
 
-         # Convert date string to datetime object
+        # Convert date string to datetime object
         try:
-            from email.utils import parsedate_to_datetime
             date_time = parsedate_to_datetime(date)
         except:
             date_time = date  # Keep as string if parsing fails
         return {
-                'id':msg_id,
-                'from':from_email,
-                'to': to_email,
-                'subject': subject,
-                'date': date_time,
-                'body':body,
-                'attachments': attachments
-            }
-    
+            'id': msg_id,
+            'from': from_email,
+            'to': to_email,
+            'subject': subject,
+            'date': date_time.strftime("%d-%m-%Y- %H:%M:%S"),
+            'body': body,
+            'attachments': attachments
+        }
+
     except Exception as e:
         print(f'An error occurred: {e}')
         return None
 
 
-def add_email_to_json(emails_json_file:str, email_data:dict) -> None:
+def add_email_to_json(emails_json_file: str, email_data: dict) -> None:
     """ Adds the email details to a json file """
-    
+
     assert Path(emails_json_file).is_file(), "File does not exist"
 
     with open(file=emails_json_file, mode='r') as file:
@@ -169,15 +212,15 @@ def add_email_to_json(emails_json_file:str, email_data:dict) -> None:
     if entry_id in [email['entry_id'] for email in emails_json]:
         print(f"Email with entry ID: {entry_id} already exists")
         return
-    
+
     data_to_add = {
-        'entry_id':email_data['id'],
-        'from':email_data['from'],
-        'to':email_data['to'],
-        'subject':email_data['subject'],
-        'body':email_data['body'],
-        'received_time':email_data['date'].strftime("%d-%m-%Y- %H:%M:%S"),
-        'attachments':email_data['attachments']
+        'message_id': email_data['id'],
+        'from': email_data['from'],
+        'to': email_data['to'],
+        'subject': email_data['subject'],
+        'body': email_data['body'],
+        'received_time': email_data['date'].strftime("%d-%m-%Y- %H:%M:%S"),
+        'attachments': email_data['attachments']
     }
 
     emails_json.append(data_to_add)
@@ -186,20 +229,92 @@ def add_email_to_json(emails_json_file:str, email_data:dict) -> None:
         json.dump(obj=emails_json, fp=json_file, ensure_ascii=False, indent=4)
 
 
-def main():
-    service = get_service()
+def add_email_json_dir(email_data: dict, json_dir_loc:str, status_file:str) -> None:
+    """
+    Saves email data to json file with the message ID as file name
+
+    Args:
+        email_data (dict): dictionary containing the email data
+    """
+    message_id = email_data['id']
+
+    file_path = Path(json_dir_loc)/f"{message_id}.json"
+    if file_path.exists():
+        print(f"Message with id: {message_id} already exisit -> not saving it again")
+        return 
+     
+    data_to_add = {
+    'message_id': email_data['id'],
+    'from': email_data['from'],
+    'to': email_data['to'],
+    'subject': email_data['subject'],
+    'body': email_data['body'],
+    'received_time': email_data['date'].strftime("%d-%m-%Y- %H:%M:%S"),
+    'attachments': email_data['attachments']
+    }
+
+
+
+def get_emails(service: Resource,
+               subject_filter:str = "Test_App_Email_1234",
+               attachment_dir:str = None,
+               emails_json_dir:str = None,
+               status_file:str = None) -> list:
+    """
+    Downloads emails to json and attachments to file and labels emails and downloaded
+
+    Args:
+        service (Resource) : Gmail authentication flow resource
+        subject_filter (str) : The text in the subject that would  
+
+    Returns:
+        list: list of message ids of emails that have been downloaded
+    """
+
+    message_ids = []
+
     messages = get_messages(service=service)
     if not messages:
         print("No messages")
         return
     for message in messages:
-        email_data = get_message_details(service=service, msg_id=message['id'])
-        # Condition to save the email
-        if 'Test_App_Email_1234' in email_data['subject']:
-            add_email_to_json(emails_json_file="emails.json", email_data=email_data)
+        email_data = get_message_details(service=service, 
+                                         msg_id=message['id'], 
+                                         attachment_dir=attachment_dir)
+        # Filter the emails by subject keywords
+        if subject_filter in email_data['subject']:
+            message_id = email_data['id']
+            
+            # Check if the email has already been saved
+            file_path = Path(emails_json_dir)/f"{message_id}.json"
+            if file_path.exists():
+                print(f"Message with id: {message_id} already exists -> not saving it again")
+                return 
+            
+            # Save the email data as json
+            with open(file=file_path, mode='w', encoding='utf-8') as json_file:
+                json.dump(obj=email_data, fp=json_file, indent=4)
+            
+            # Update the status file
+            df = pd.read_csv(filepath_or_buffer=status_file)
+            if message_id in df['message_id'].values:
+                print('Email with message id: {message_id} already exists in status file -> not adding it again')
+                return
+            status_data = {"message_id" : message_id,
+                           "email_downloaded" : True,
+                           "email_categorized" : False,
+                           "ocr_completed" : False}
+            df.loc[len(df)] = status_data
+            df.to_csv(path_or_buf=status_file, index=False)
+
+            # Add message_id to be returned
+            message_ids.append(message_id)
+            print(f'get_emails() got email with message id {message_id}')
+            
+    return message_ids
 
 
-def create_message(sender:str, to:str, subject:str, message_text:str) -> dict:
+def create_message(sender: str, to: str, subject: str, message_text: str) -> dict:
     """ Creates an email message """
     message = MIMEText(message_text)
     message['to'] = to
@@ -209,9 +324,10 @@ def create_message(sender:str, to:str, subject:str, message_text:str) -> dict:
     return {'raw': raw_message.decode("utf-8")}
 
 
-def send_message(service:Resource, user_id='me', message:dict=None):
+def send_message(service: Resource, user_id='me', message: dict = None):
     try:
-        message = service.users().messages().send(userId=user_id, body=message).execute()
+        message = service.users().messages().send(
+            userId=user_id, body=message).execute()
         print('Message Id: %s' % message['id'])
         return message
     except Exception as e:
@@ -220,10 +336,14 @@ def send_message(service:Resource, user_id='me', message:dict=None):
 
 
 if __name__ == "__main__":
-    # main()
-    service = get_service()
-    msg = create_message(sender='me', to='karan@artiquare.com', subject='Test sending email', message_text="Thank you for getting in touch")
-    message = send_message(service=service, message=msg)
-    print(f"{type(message) = }")
-    print(f"{message = }")
+    # service = get_service()
+    # Create a message that you want to send -> add the receipient (to), subject and body (message_text)
+    # msg = create_message(sender='me', to='karan@artiquare.com', subject='Test sending email', message_text="Thank you for getting in touch")
+    # Send the message
+    # message = send_message(service=service, message=msg)
+    
+    print(Path().cwd())
+    print((Path().cwd().parent /'working').is_dir())
+    print(f"{Path(__file__).parent.parent.resolve() = }")
+          
 

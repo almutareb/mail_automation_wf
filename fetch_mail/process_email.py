@@ -11,7 +11,7 @@ import time
 import fetch_mail_outlook
 from pathlib import Path
 import attachment_parser
-import summarize_mail
+import fetch_mail.categorize_email as categorize_email
 
 
 load_dotenv()
@@ -66,7 +66,7 @@ def process_emails(unprocessed_emails:list[str],
         # Summarize the email body
         email_body = email_data['body'].replace('\r',' ').replace("\n", " ")
 
-        summary = summarize_mail.summarize_email_body(email_body=email_body, 
+        summary = categorize_email.summarize_email_body(email_body=email_body, 
                                                       llm_model=summarize_llm)
         df = pd.read_csv(filepath_or_buffer=status_file, dtype='object')
         df.loc[df['entry_id'] == entry_id, 'Summary'] = summary
